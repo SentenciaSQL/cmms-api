@@ -1,4 +1,4 @@
-package com.afriasdev.cmms;
+package com.afriasdev.cmms.dto;
 
 import com.afriasdev.cmms.model.EvidenceType;
 import jakarta.validation.constraints.NotBlank;

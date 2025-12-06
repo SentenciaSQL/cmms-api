@@ -1,6 +1,6 @@
 package com.afriasdev.cmms.controller;
 
-import com.afriasdev.cmms.WorkOrderEvidenceDTO;
+import com.afriasdev.cmms.dto.WorkOrderEvidenceDTO;
 import com.afriasdev.cmms.dto.request.WorkOrderEvidenceCreateRequest;
 import com.afriasdev.cmms.model.EvidenceType;
 import com.afriasdev.cmms.service.WorkOrderEvidenceService;

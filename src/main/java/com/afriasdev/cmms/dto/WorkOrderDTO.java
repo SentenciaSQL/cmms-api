@@ -1,6 +1,5 @@
 package com.afriasdev.cmms.dto;
 
-import com.afriasdev.cmms.WorkOrderEvidenceDTO;
 import com.afriasdev.cmms.model.WorkOrderPriority;
 import com.afriasdev.cmms.model.WorkOrderStatus;
 import jakarta.validation.constraints.NotBlank;
