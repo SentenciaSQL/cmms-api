@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: cmms-manager
+  datasource:
+    url: jdbc:postgresql://localhost:5434/cmms-manager-db
+    username: admin
+    password: admin123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.format_sql: true
+      hibernate.show_sql: false
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+app:
+  jwt:
+    secret: 4UZScpB3jw5o/isHbzaXW2DTRfUwq3K5jl+ggT4wsys=
+    expiration-ms: 3600000
