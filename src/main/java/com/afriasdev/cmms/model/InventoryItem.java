@@ -1,12 +1,9 @@
 package com.afriasdev.cmms.model;
 
-import com.afriasdev.cmms.model.AuditableEntity;
-
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "inventory_items")
@@ -68,10 +65,6 @@ public class InventoryItem extends AuditableEntity {
     @Column(nullable = false)
     private Boolean isActive = true;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-
     public enum ItemType {
         SPARE_PART, TOOL, CONSUMABLE, MATERIAL
     }
@@ -84,4 +77,3 @@ public class InventoryItem extends AuditableEntity {
         return currentStock <= reorderPoint;
     }
 }
-
