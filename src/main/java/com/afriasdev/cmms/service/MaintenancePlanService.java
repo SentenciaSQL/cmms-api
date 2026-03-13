@@ -10,6 +10,8 @@ import com.afriasdev.cmms.model.Asset;
 import com.afriasdev.cmms.model.MaintenancePlan;
 import com.afriasdev.cmms.model.Technician;
 import com.afriasdev.cmms.model.WorkOrder;
+import com.afriasdev.cmms.model.WorkOrderPriority;
+import com.afriasdev.cmms.model.WorkOrderStatus;
 import com.afriasdev.cmms.repository.AssetRepository;
 import com.afriasdev.cmms.repository.MaintenancePlanRepository;
 import com.afriasdev.cmms.repository.TechnicianRepository;
@@ -121,24 +123,60 @@ public class MaintenancePlanService {
         maintenancePlanRepository.save(plan);
     }
 
+    /**
+     * Ejecucion manual de un plan: genera la OT inmediatamente sin esperar al scheduler.
+     * Util desde el endpoint POST /api/maintenance-plans/{id}/execute.
+     */
     @Transactional
     public void executeMaintenancePlan(Long id) {
         MaintenancePlan plan = maintenancePlanRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Plan no encontrado"));
 
-        // Crear Work Order - AJUSTA según tu entidad WorkOrder
+        LocalDateTime now = LocalDateTime.now();
+        long count = workOrderRepository.count();
+
         WorkOrder workOrder = new WorkOrder();
-        workOrder.setTitle("Mantenimiento: " + plan.getName());
+        workOrder.setCode(String.format("WO-%05d", count + 1));
+        workOrder.setTitle(String.format("[%s] %s", plan.getType().name(), plan.getName()));
         workOrder.setDescription(plan.getInstructions());
+        workOrder.setStatus(WorkOrderStatus.OPEN);
+        workOrder.setPriority(mapPlanPriority(plan.getPriority()));
         workOrder.setAsset(plan.getAsset());
-        // Mapea más campos según tu WorkOrder
+
+        if (plan.getAsset() != null && plan.getAsset().getSite() != null) {
+            workOrder.setSite(plan.getAsset().getSite());
+            if (plan.getAsset().getSite().getCompany() != null) {
+                workOrder.setCompany(plan.getAsset().getSite().getCompany());
+            }
+        }
+
+        LocalDateTime scheduledStart = plan.getNextScheduledDate() != null
+                ? plan.getNextScheduledDate() : now;
+        workOrder.setScheduledStart(scheduledStart);
+        workOrder.setScheduledEnd(scheduledStart.plusMinutes(plan.getEstimatedDurationMinutes()));
+        workOrder.setDueDate(scheduledStart.toLocalDate());
+        workOrder.setEstimatedHours(
+                java.math.BigDecimal.valueOf(plan.getEstimatedDurationMinutes())
+                        .divide(java.math.BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP));
+
+        if (plan.getAssignedTechnician() != null) {
+            workOrder.setAssignedTech(plan.getAssignedTechnician());
+        }
 
         workOrderRepository.save(workOrder);
 
-        // Actualizar plan
-        plan.setLastExecutionDate(LocalDateTime.now());
+        plan.setLastExecutionDate(now);
         plan.setNextScheduledDate(calculateNextDate(plan));
         maintenancePlanRepository.save(plan);
+    }
+
+    private WorkOrderPriority mapPlanPriority(MaintenancePlan.Priority priority) {
+        return switch (priority) {
+            case LOW      -> WorkOrderPriority.LOW;
+            case MEDIUM   -> WorkOrderPriority.MEDIUM;
+            case HIGH     -> WorkOrderPriority.HIGH;
+            case CRITICAL -> WorkOrderPriority.URGENT;
+        };
     }
 
     private LocalDateTime calculateNextDate(MaintenancePlan plan) {

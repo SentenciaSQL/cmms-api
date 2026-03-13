@@ -26,3 +26,10 @@ app:
   jwt:
     secret: 4UZScpB3jw5o/isHbzaXW2DTRfUwq3K5jl+ggT4wsys=
     expiration-ms: 3600000
+  scheduler:
+    # Cron para generacion automatica de OTs desde planes de mantenimiento
+    # Default: cada hora en punto -> "0 0 * * * *"
+    # Para pruebas:               -> "0 * * * * *"  (cada minuto)
+    maintenance-cron: "0 0 * * * *"
+    # Usuario del sistema usado como creador de OTs automaticas (debe existir en BD)
+    system-username: system
