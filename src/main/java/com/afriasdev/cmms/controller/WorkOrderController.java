@@ -7,6 +7,7 @@ import com.afriasdev.cmms.dto.request.WorkOrderUpdateStatusRequest;
 import com.afriasdev.cmms.dto.response.PaginatedResponse;
 import com.afriasdev.cmms.model.WorkOrderStatus;
 import com.afriasdev.cmms.service.WorkOrderService;
+import com.afriasdev.cmms.security.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -276,9 +277,6 @@ public class WorkOrderController {
     }
 
     private Long getUserIdFromAuth(Authentication authentication) {
-        // Aquí debes implementar la lógica para obtener el User ID del token JWT
-        // Por ahora retorno un placeholder
-        // En tu implementación real, extraerías el ID del UserDetails
-        return 1L; // TODO: Implementar con JWT
+        return SecurityUtils.getUserIdFromAuth(authentication);
     }
 }

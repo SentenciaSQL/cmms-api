@@ -4,6 +4,7 @@ import com.afriasdev.cmms.dto.WorkOrderEvidenceDTO;
 import com.afriasdev.cmms.dto.request.WorkOrderEvidenceCreateRequest;
 import com.afriasdev.cmms.model.EvidenceType;
 import com.afriasdev.cmms.service.WorkOrderEvidenceService;
+import com.afriasdev.cmms.security.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -110,7 +111,6 @@ public class WorkOrderEvidenceController {
     }
 
     private Long getUserIdFromAuth(Authentication authentication) {
-        // TODO: Implementar con tu JWT actual
-        return 1L;
+        return SecurityUtils.getUserIdFromAuth(authentication);
     }
 }
