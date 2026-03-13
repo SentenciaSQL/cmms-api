@@ -4,35 +4,63 @@ server:
 spring:
   application:
     name: cmms-manager
+
   datasource:
     url: jdbc:postgresql://localhost:5434/cmms-manager-db
     username: admin
     password: admin123
+
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate.format_sql: true
       hibernate.show_sql: false
+
   flyway:
     enabled: true
+
   servlet:
     multipart:
       enabled: true
       max-file-size: 10MB
       max-request-size: 10MB
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:noreply@cmms.com}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+
 app:
   jwt:
     secret: 4UZScpB3jw5o/isHbzaXW2DTRfUwq3K5jl+ggT4wsys=
     expiration-ms: 3600000
-    refresh-expiration-ms: 604800000  # 7 dias
+    refresh-expiration-ms: 604800000
+
   scheduler:
-    # Cron para generacion automatica de OTs desde planes de mantenimiento
-    # Default: cada hora en punto -> "0 0 * * * *"
-    # Para pruebas:               -> "0 * * * * *"  (cada minuto)
     maintenance-cron: "0 0 * * * *"
-    # Usuario del sistema usado como creador de OTs automaticas (debe existir en BD)
     system-username: system
-    # Limpieza de refresh tokens expirados/revocados (3 AM cada dia)
     refresh-token-cleanup-cron: "0 0 3 * * *"
+    overdue-check-cron: "0 0 8 * * *"
+
+  email:
+    from: ${MAIL_FROM:noreply@cmms.com}
+    from-name: "CMMS Manager"
+    base-url: ${APP_BASE_URL:http://localhost:4200}
+    enabled: ${MAIL_ENABLED:true} # Para desarrollo local: MAIL_ENABLED=false
+
+## Para activar en producción, solo setear variables de entorno:
+#  MAIL_HOST=smtp.gmail.com
+#  MAIL_USERNAME=tu@gmail.com
+#  MAIL_PASSWORD=app-password
+#  MAIL_FROM=noreply@tuempresa.com
+#  APP_BASE_URL=https://tuapp.com

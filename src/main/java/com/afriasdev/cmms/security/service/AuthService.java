@@ -8,7 +8,9 @@ import com.afriasdev.cmms.security.model.Role;
 import com.afriasdev.cmms.security.model.User;
 import com.afriasdev.cmms.security.repository.UserRepository;
 import com.afriasdev.cmms.security.service.RefreshTokenService.RotationResult;
+import com.afriasdev.cmms.event.UserRegisteredEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,6 +29,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
@@ -73,6 +76,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+        eventPublisher.publishEvent(new UserRegisteredEvent(this, user));
         return buildAuthResponse(user);
     }
 

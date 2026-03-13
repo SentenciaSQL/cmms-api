@@ -5,7 +5,9 @@ import com.afriasdev.cmms.repository.MaintenancePlanRepository;
 import com.afriasdev.cmms.repository.WorkOrderRepository;
 import com.afriasdev.cmms.security.model.User;
 import com.afriasdev.cmms.security.repository.UserRepository;
+import com.afriasdev.cmms.event.WorkOrderOverdueEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,6 +40,7 @@ public class MaintenanceSchedulerService {
     private final MaintenancePlanRepository maintenancePlanRepository;
     private final WorkOrderRepository workOrderRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Username del usuario del sistema usado como "creador" de las OTs automáticas.
@@ -199,6 +203,31 @@ public class MaintenanceSchedulerService {
      * Busca el usuario del sistema por username configurado.
      * Retorna null (con log) si no existe, para que el caller decida cómo manejar el error.
      */
+    /**
+     * Detecta OTs vencidas y publica un WorkOrderOverdueEvent por cada una.
+     * Corre diariamente a las 8:00 AM (configurable).
+     */
+    @Scheduled(cron = "${app.scheduler.overdue-check-cron:0 0 8 * * *}")
+    @Transactional(readOnly = true)
+    public void checkOverdueWorkOrders() {
+        log.info("[Scheduler] Verificando órdenes de trabajo vencidas...");
+
+        List<WorkOrder> overdue = workOrderRepository.findAll().stream()
+                .filter(wo -> wo.getDueDate() != null
+                        && wo.getDueDate().isBefore(LocalDate.now())
+                        && wo.getStatus() != WorkOrderStatus.COMPLETED
+                        && wo.getStatus() != WorkOrderStatus.CANCELLED)
+                .toList();
+
+        if (overdue.isEmpty()) {
+            log.info("[Scheduler] No se encontraron OTs vencidas.");
+            return;
+        }
+
+        log.warn("[Scheduler] {} OT(s) vencidas detectadas. Enviando alertas...", overdue.size());
+        overdue.forEach(wo -> eventPublisher.publishEvent(new WorkOrderOverdueEvent(this, wo)));
+    }
+
     private User resolveSystemUser() {
         return userRepository.findByUsername(systemUsername).orElse(null);
     }

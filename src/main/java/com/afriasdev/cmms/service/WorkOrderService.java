@@ -11,7 +11,10 @@ import com.afriasdev.cmms.repository.*;
 import com.afriasdev.cmms.security.model.User;
 import com.afriasdev.cmms.security.repository.UserRepository;
 import com.afriasdev.cmms.specification.WorkOrderSpecification;
+import com.afriasdev.cmms.event.WorkOrderAssignedEvent;
+import com.afriasdev.cmms.event.WorkOrderStatusChangedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class WorkOrderService {
     private final WorkOrderRepository workOrderRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
     private final TechnicianRepository technicianRepository;
     private final AssetRepository assetRepository;
@@ -228,6 +232,7 @@ public class WorkOrderService {
         workOrder.setUpdatedBy(updater);
 
         WorkOrder updated = workOrderRepository.save(workOrder);
+        eventPublisher.publishEvent(new WorkOrderAssignedEvent(this, updated));
         return mapToDTO(updated);
     }
 
@@ -265,6 +270,7 @@ public class WorkOrderService {
         workOrder.setUpdatedBy(updater);
 
         WorkOrder updated = workOrderRepository.save(workOrder);
+        eventPublisher.publishEvent(new WorkOrderStatusChangedEvent(this, updated, oldStatus, newStatus));
         return mapToDTO(updated);
     }
 

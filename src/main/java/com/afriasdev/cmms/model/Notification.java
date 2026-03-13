@@ -46,9 +46,6 @@ public class Notification extends AuditableEntity {
 
     private Long relatedEntityId; // ID de la entidad relacionada (OT, Asset, etc.)
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
     private LocalDateTime readAt;
 
 
