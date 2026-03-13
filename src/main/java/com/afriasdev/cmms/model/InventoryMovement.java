@@ -1,5 +1,7 @@
 package com.afriasdev.cmms.model;
 
+import com.afriasdev.cmms.model.AuditableEntity;
+
 import com.afriasdev.cmms.security.model.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,7 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class InventoryMovement {
+public class InventoryMovement extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,11 +60,8 @@ public class InventoryMovement {
     @Column(nullable = false)
     private LocalDateTime movementDate;
 
-    private LocalDateTime createdAt;
-
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
         if (movementDate == null) {
             movementDate = LocalDateTime.now();
         }

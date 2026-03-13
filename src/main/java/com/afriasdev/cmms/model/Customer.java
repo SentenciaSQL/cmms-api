@@ -1,12 +1,11 @@
 package com.afriasdev.cmms.model;
 
+import com.afriasdev.cmms.model.AuditableEntity;
+
 import com.afriasdev.cmms.security.model.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -15,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name =  "customers")
-public class Customer {
+public class Customer extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,11 +39,4 @@ public class Customer {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-}
+    }

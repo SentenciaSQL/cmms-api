@@ -1,5 +1,7 @@
 package com.afriasdev.cmms.model;
 
+import com.afriasdev.cmms.model.AuditableEntity;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MaintenancePlan {
+public class MaintenancePlan extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,19 +65,6 @@ public class MaintenancePlan {
     @Column(nullable = false)
     private Boolean autoGenerateWorkOrder = true;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 
     public enum MaintenanceType {
         PREVENTIVE, PREDICTIVE, CORRECTIVE

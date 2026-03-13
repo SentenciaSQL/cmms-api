@@ -1,5 +1,7 @@
 package com.afriasdev.cmms.model;
 
+import com.afriasdev.cmms.model.AuditableEntity;
+
 import com.afriasdev.cmms.security.model.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Notification {
+public class Notification extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,10 +51,6 @@ public class Notification {
 
     private LocalDateTime readAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 
     public enum NotificationType {
         INFO, WARNING, ERROR, SUCCESS
