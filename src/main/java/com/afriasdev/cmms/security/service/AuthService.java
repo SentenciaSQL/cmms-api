@@ -7,13 +7,14 @@ import com.afriasdev.cmms.security.jwt.JwtService;
 import com.afriasdev.cmms.security.model.Role;
 import com.afriasdev.cmms.security.model.User;
 import com.afriasdev.cmms.security.repository.UserRepository;
+import com.afriasdev.cmms.security.service.RefreshTokenService.RotationResult;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
@@ -25,57 +26,40 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenService refreshTokenService;
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsernameOrEmail(),
                         request.getPassword()
                 )
         );
 
-        String usernameOrEmail = request.getUsernameOrEmail();
-
-        User user = userRepository.findByUsernameOrEmail(usernameOrEmail)
+        User user = userRepository.findByUsernameOrEmail(request.getUsernameOrEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String token = jwtService.generateToken(user);
-        long expiresAt = System.currentTimeMillis() + jwtService.getExpirationMs();
-
-        return AuthResponse.builder()
-                .accessToken(token)
-                .tokenType("Bearer")
-                .expiresAt(expiresAt)
-                .email(user.getEmail())
-                .username(user.getUsername())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .roles(user.getRoles())
-                .build();
+        return buildAuthResponse(user);
     }
 
-    // Método opcional para registrar usuarios en nuevos proyectos
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email ya está en uso");
+            throw new IllegalArgumentException("Email ya est\u00e1 en uso");
         }
-
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username ya está en uso");
+            throw new IllegalArgumentException("Username ya est\u00e1 en uso");
         }
 
         String roleStr = request.getRole().toUpperCase();
-
-        // Permitir variantes como: "ADMIN" → "ROLE_ADMIN"
-        if (!roleStr.startsWith("ROLE_")) {
-            roleStr = "ROLE_" + roleStr;
-        }
+        if (!roleStr.startsWith("ROLE_")) roleStr = "ROLE_" + roleStr;
 
         Role roleEnum;
         try {
             roleEnum = Role.valueOf(roleStr);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("El role '" + request.getRole() + "' no es válido");
+            throw new IllegalArgumentException("El role '" + request.getRole() + "' no es v\u00e1lido");
         }
 
         User user = User.builder()
@@ -89,20 +73,66 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+        return buildAuthResponse(user);
+    }
 
-        String token = jwtService.generateToken(user);
-        long expiresAt = System.currentTimeMillis() + jwtService.getExpirationMs();
+    /**
+     * Renueva el access token usando un refresh token v\u00e1lido.
+     * El refresh token se rota: el anterior queda revocado y se emite uno nuevo.
+     */
+    @Transactional
+    public AuthResponse refresh(String rawRefreshToken) {
+        RotationResult rotation = refreshTokenService.rotateRefreshToken(rawRefreshToken);
+        User user = rotation.user();
+
+        long now = System.currentTimeMillis();
+        String newAccessToken = jwtService.generateToken(user);
 
         return AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(newAccessToken)
+                .refreshToken(rotation.newRawToken())
                 .tokenType("Bearer")
-                .expiresAt(expiresAt)
+                .expiresAt(now + jwtService.getExpirationMs())
+                .refreshExpiresAt(now + jwtService.getRefreshExpirationMs())
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .roles(user.getRoles())
                 .build();
+    }
 
+    /**
+     * Logout: revoca el refresh token indicado.
+     * Si refreshToken es null, revoca todas las sesiones del usuario.
+     */
+    @Transactional
+    public void logout(Long userId, String rawRefreshToken) {
+        if (rawRefreshToken != null && !rawRefreshToken.isBlank()) {
+            refreshTokenService.revoke(rawRefreshToken);
+        } else {
+            refreshTokenService.revokeAllForUser(userId);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+
+    private AuthResponse buildAuthResponse(User user) {
+        long now = System.currentTimeMillis();
+        String accessToken  = jwtService.generateToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user);
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresAt(now + jwtService.getExpirationMs())
+                .refreshExpiresAt(now + jwtService.getRefreshExpirationMs())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .roles(user.getRoles())
+                .build();
     }
 }

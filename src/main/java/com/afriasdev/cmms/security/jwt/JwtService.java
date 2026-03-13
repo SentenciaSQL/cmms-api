@@ -21,15 +21,18 @@ import java.util.stream.Collectors;
 public class JwtService {
     private final Key signingKey;
     private final long expirationMs;
+    private final long refreshExpirationMs;
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
-            @Value("${app.jwt.expiration-ms}") long expirationMs
+            @Value("${app.jwt.expiration-ms}") long expirationMs,
+            @Value("${app.jwt.refresh-expiration-ms:604800000}") long refreshExpirationMs
     ) {
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(
                 Encoders.BASE64.encode(secret.getBytes())
         ));
         this.expirationMs = expirationMs;
+        this.refreshExpirationMs = refreshExpirationMs;
     }
 
     public String generateToken(User user) {
@@ -82,5 +85,9 @@ public class JwtService {
 
     public long getExpirationMs() {
         return expirationMs;
+    }
+
+    public long getRefreshExpirationMs() {
+        return refreshExpirationMs;
     }
 }

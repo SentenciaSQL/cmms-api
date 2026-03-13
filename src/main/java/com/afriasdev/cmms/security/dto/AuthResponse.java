@@ -10,8 +10,10 @@ import java.util.Set;
 @Builder
 public class AuthResponse {
     private String accessToken;
+    private String refreshToken;        // UUID raw — solo viaja en este response
     private String tokenType;
-    private long   expiresAt;   // epoch millis
+    private long   expiresAt;           // access token expiry (epoch ms)
+    private long   refreshExpiresAt;    // refresh token expiry (epoch ms)
 
     private String email;
     private String username;
