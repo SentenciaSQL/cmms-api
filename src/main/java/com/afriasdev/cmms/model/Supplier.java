@@ -1,7 +1,5 @@
 package com.afriasdev.cmms.model;
 
-import com.afriasdev.cmms.model.AuditableEntity;
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -58,10 +56,6 @@ public class Supplier extends AuditableEntity {
 
     @Column(nullable = false)
     private Boolean isActive = true;
-
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
 
     public enum SupplierType {
         PARTS, TOOLS, SERVICES, MATERIALS, GENERAL
